@@ -1,0 +1,1857 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="description" content="Egonomy: Scaling and Transferability Laws of Human-Robot Co-training">
+  <meta name="keywords" content="Robot manipulation, Imitation learning, Human data, Co-training, Scaling laws, VLA, Egocentric video">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta property="og:title" content="Egonomy">
+  <meta property="og:description" content="Scaling and Transferability Laws of Human-Robot Co-training">
+  <meta property="og:image" content="img/teaser.png">
+  <title>Egonomy — Scaling and Transferability Laws of Human-Robot Co-training</title>
+
+  <link rel="icon" href="data:image/svg+xml,
+    <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
+      <text y='0.9em' font-size='90'>🤖</text>
+    </svg>">
+
+  <!-- Fonts:
+       • Source Serif 4 — the closest free Google Font to "Charter" (the font
+         Cambrian-S uses on macOS). Acts as the cross-platform fallback so
+         Windows / Linux users see something visually identical to Charter.
+       • JetBrains Mono — for the BibTeX / code blocks.
+       • M PLUS Rounded 1c — kept for the icosphere/title weight fallback. -->
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;0,8..60,700;1,8..60,400;1,8..60,500;1,8..60,600&family=JetBrains+Mono:wght@400;500&family=Newsreader:ital,wght@0,400;0,500;0,600;1,400&family=M+PLUS+Rounded+1c:wght@700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="./static/css/bulma.min.css">
+  <link rel="stylesheet" href="./static/css/bulma-carousel.min.css">
+  <!-- Font Awesome v6 from CDN: needed for fa-arrows-rotate / fa-sparkles / fa-hand / fa-grip etc. -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.css"/>
+
+  <style>
+    /* Parchment / fresco palette — Cambrian-S × Sistine Chapel */
+    :root {
+      --c-text:        #1c1814;
+      --c-muted:       #5b5045;
+      --c-soft:        #8d8276;
+      --c-bg:          #F2F0E5;   /* Cambrian-S parchment */
+      --c-bg-warm:     #ecead8;
+      --c-surface:     #fbf9ef;
+      --c-border:      rgba(28, 24, 20, 0.10);
+      --c-border-soft: rgba(28, 24, 20, 0.055);
+      --c-blue:        #3f5f87;   /* deeper, fresco-friendly */
+      --c-blue-deep:   #2c456a;
+      --c-blue-light:  #708ab2;
+      --c-orange:      #c66f1f;   /* burnt terracotta */
+      --c-orange-deep: #9a4f12;
+      --c-orange-light:#e8a76b;
+      --c-rose:        #b85c5c;
+      --c-rose-deep:   #8e4242;
+      --c-amber:       #b8893f;
+      --c-emerald:     #5f8a6d;
+      --c-violet:      #7a5e95;
+      --c-ink:         #1c1814;
+
+      --shadow-sm: 0 1px 2px rgba(20, 24, 31, 0.04), 0 2px 6px rgba(20, 24, 31, 0.04);
+      --shadow-md: 0 2px 6px rgba(20, 24, 31, 0.05), 0 8px 24px rgba(20, 24, 31, 0.06);
+      --shadow-lg: 0 6px 16px rgba(20, 24, 31, 0.07), 0 24px 48px rgba(20, 24, 31, 0.08);
+
+      --r-sm: 8px;
+      --r-md: 14px;
+      --r-lg: 20px;
+
+      --container: 1100px;
+    }
+
+    html { scroll-behavior: smooth; scroll-padding-top: 72px; }
+    /* Charter-first cascade that mimics Cambrian-S exactly on macOS/iOS, and
+       falls back to Source Serif 4 (Google Font, near-identical to Charter)
+       on Windows/Linux/Android so the page looks the same everywhere. */
+    :root { --font-serif: Charter, "Charter BT", "Source Serif 4", "Source Serif Pro",
+                          "Sitka Text", Cambria, Georgia, "Times New Roman", serif; }
+    body {
+      font-family: var(--font-serif);
+      color: var(--c-text);
+      background: var(--c-bg);
+      font-feature-settings: "ss01", "cv11", "kern", "liga", "onum";
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+      font-size: 18px;
+      line-height: 1.55;
+    }
+    /* Subtle parchment paper texture overlay across the whole page */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      background-image:
+        radial-gradient(rgba(28,24,20,0.025) 1px, transparent 1px),
+        radial-gradient(rgba(28,24,20,0.018) 1px, transparent 1px);
+      background-size: 32px 32px, 11px 11px;
+      background-position: 0 0, 6px 6px;
+      mix-blend-mode: multiply;
+      opacity: 0.55;
+    }
+    /* Make sure all our content sits ABOVE the parchment texture */
+    .top-nav, .scroll-progress, .dot-nav, .hero-wrap,
+    .marquee, .section-x, footer.site-footer { position: relative; z-index: 1; }
+
+    /* ---------- Top scroll-progress bar ---------- */
+    .scroll-progress {
+      position: fixed;
+      top: 0; left: 0;
+      height: 3px;
+      width: 0%;
+      background: linear-gradient(90deg, var(--c-blue), var(--c-violet), var(--c-rose));
+      background-size: 200% 100%;
+      box-shadow: 0 0 12px rgba(202,111,111,0.45);
+      z-index: 100;
+      transition: width 0.08s linear;
+      animation: gradient-pan 6s linear infinite;
+    }
+    @keyframes gradient-pan {
+      to { background-position: 200% 0; }
+    }
+
+    /* ---------- Side dot-nav ---------- */
+    .dot-nav {
+      position: fixed;
+      right: 18px;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 40;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding: 10px 8px;
+    }
+    .dot-nav a {
+      width: 9px; height: 9px;
+      border-radius: 50%;
+      background: rgba(28, 24, 20, 0.22);
+      transition: all 0.22s ease;
+      position: relative;
+      display: block;
+    }
+    .dot-nav a:hover {
+      background: var(--c-orange-deep);
+      transform: scale(1.45);
+    }
+    .dot-nav a.active {
+      background: var(--c-orange-deep);
+      box-shadow: 0 0 0 4px rgba(198, 111, 31, 0.18);
+    }
+    .dot-nav a::after {
+      content: attr(data-label);
+      position: absolute;
+      right: 22px; top: 50%;
+      transform: translate(8px, -50%);
+      background: var(--c-ink);
+      color: var(--c-bg);
+      font-family: 'Newsreader', serif;
+            font-size: 0.84rem;
+      font-weight: 500;
+      letter-spacing: 0.01em;
+      padding: 5px 12px;
+      border-radius: 6px;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.2s ease;
+    }
+    .dot-nav a:hover::after { opacity: 1; transform: translate(0, -50%); }
+    @media (max-width: 1180px) { .dot-nav { display: none; } }
+
+    /* (The marquee strip was removed in the parchment redesign.) */
+
+    /* ---------- Cinematic fresco hero ---------- */
+    .hero-fresco {
+      position: relative;
+      width: 100%;
+      overflow: hidden;
+      background: var(--c-bg);
+    }
+    .hero-fresco .hero-image {
+      display: block;
+      width: 100%;
+      height: auto;
+      max-height: 72vh;
+      object-fit: cover;
+      object-position: center 35%;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+    /* Vignette + bottom fade so the image blends into the parchment background */
+    .hero-fresco::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(180deg, rgba(242,240,229,0) 60%, rgba(242,240,229,0.55) 80%, var(--c-bg) 100%),
+        radial-gradient(ellipse 110% 80% at 50% 45%, transparent 55%, rgba(28,24,20,0.18) 100%);
+      pointer-events: none;
+    }
+    /* Floating venue/badge over the upper-left of the fresco */
+    .hero-corner {
+      position: absolute;
+      top: 22px; left: 28px;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      background: rgba(242, 240, 229, 0.86);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(28, 24, 20, 0.10);
+      font-family: 'Newsreader', serif;
+            font-size: 0.86rem;
+      color: var(--c-ink);
+      z-index: 3;
+    }
+    .hero-corner .dot {
+      width: 6px; height: 6px;
+      background: var(--c-orange);
+      border-radius: 50%;
+      box-shadow: 0 0 0 3px rgba(198,111,31,0.18);
+    }
+
+    /* Title brand colors — solid, fresco-friendly (no shimmer in academic mode) */
+    .hero-title .word-ego  { color: var(--c-orange-deep); }
+    .hero-title .word-nomy { color: var(--c-blue-deep); }
+    /* "Egonomy" mentions in body text */
+    .section-lead .hl-rose,
+    .brand-name { color: var(--c-orange-deep); font-weight: 600; font-style: italic; }
+
+    /* ---------- Bouncing scroll hint ---------- */
+    .scroll-hint {
+      position: absolute;
+      left: 50%; bottom: 22px;
+      transform: translateX(-50%);
+      font-family: 'Newsreader', serif;
+            font-size: 0.78rem;
+      color: var(--c-muted);
+      letter-spacing: 0.12em;
+      text-align: center;
+      z-index: 3;
+      animation: scroll-bounce 2.4s ease-in-out infinite;
+      text-decoration: none;
+    }
+    .scroll-hint i { display: block; margin-top: 4px; font-size: 1rem; color: var(--c-orange); }
+    @keyframes scroll-bounce {
+      0%, 100% { transform: translateX(-50%) translateY(0);  opacity: 0.75; }
+      50%      { transform: translateX(-50%) translateY(8px); opacity: 1; }
+    }
+
+    /* ---------- Highlights strip (badge-cards) ---------- */
+    .highlights-strip {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      margin: 8px 0 0;
+    }
+    @media (max-width: 900px) { .highlights-strip { grid-template-columns: repeat(2, 1fr); } }
+    .highlight-cell {
+      position: relative;
+      background: linear-gradient(180deg, var(--c-surface), #f6f7fb);
+      border: 1px solid var(--c-border);
+      border-radius: var(--r-md);
+      padding: 16px 16px 14px;
+      transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
+      overflow: hidden;
+    }
+    .highlight-cell::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      padding: 1px;
+      background: linear-gradient(135deg, transparent 30%, rgba(94,127,168,0.6) 60%, rgba(202,111,111,0.6));
+      -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+              mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor;
+              mask-composite: exclude;
+      opacity: 0;
+      transition: opacity 0.22s ease;
+      pointer-events: none;
+    }
+    .highlight-cell:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-md);
+    }
+    .highlight-cell:hover::after { opacity: 1; }
+    .highlight-cell .star { color: var(--c-orange); font-size: 0.86rem; margin-bottom: 4px; display: block; }
+    .highlight-cell .label {
+      color: var(--c-orange-deep);
+      font-family: 'Newsreader', serif;
+            font-size: 0.92rem;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      margin-bottom: 4px;
+    }
+    .highlight-cell .desc {
+      color: var(--c-text);
+      font-family: 'Newsreader', serif;
+      font-size: 1rem;
+      line-height: 1.45;
+      font-weight: 400;
+    }
+
+    /* ---------- Stat number animation: ready for JS-driven counter ---------- */
+    .stat-num.counter::after { content: attr(data-suffix); color: var(--c-rose); }
+
+    /* ---------- 3D tilt for finding cards ---------- */
+    .finding-card {
+      transform-style: preserve-3d;
+      transition: transform 0.18s ease, box-shadow 0.22s ease;
+    }
+    .finding-card .finding-glow {
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      pointer-events: none;
+      background:
+        radial-gradient(220px 180px at var(--mx, 50%) var(--my, 50%), rgba(94,127,168,0.18), transparent 70%);
+      opacity: 0;
+      transition: opacity 0.22s ease;
+    }
+    .finding-card:hover .finding-glow { opacity: 1; }
+
+    /* ---------- Section background accents ---------- */
+    .section-x { position: relative; }
+    .big-numeral {
+      position: absolute;
+      top: 28px; right: 24px;
+      font-family: var(--font-serif);
+            font-weight: 600;
+      font-size: 8rem;
+      line-height: 1;
+      color: rgba(63,95,135,0.055);
+      letter-spacing: -0.04em;
+      pointer-events: none;
+      user-select: none;
+      z-index: 0;
+    }
+    .section-head, .findings-grid, .fig-block, .fig-row, .stat-strip,
+    .highlights-strip, .cite-card, #comic-carousel, #results-carousel { position: relative; z-index: 1; }
+    @media (max-width: 720px) { .big-numeral { display: none; } }
+
+    /* ---------- Figure glow on hover ---------- */
+    .fig-block a {
+      position: relative;
+    }
+    .fig-block a::before {
+      content: "";
+      position: absolute; inset: -6px;
+      background: radial-gradient(60% 60% at 50% 50%, rgba(94,127,168,0.22), transparent 70%);
+      filter: blur(18px);
+      opacity: 0;
+      transition: opacity 0.25s ease;
+      z-index: -1;
+      pointer-events: none;
+    }
+    .fig-block a:hover::before { opacity: 1; }
+
+    /* ---------- Sticky top nav (parchment) ---------- */
+    .top-nav {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      backdrop-filter: saturate(140%) blur(12px);
+      -webkit-backdrop-filter: saturate(140%) blur(12px);
+      background: rgba(242, 240, 229, 0.82);
+      border-bottom: 1px solid var(--c-border-soft);
+    }
+    .top-nav-inner {
+      max-width: var(--container);
+      margin: 0 auto;
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      gap: 22px;
+    }
+    .top-nav-brand {
+      font-family: 'Newsreader', 'Charter', 'Georgia', serif;
+      font-weight: 700;
+            font-size: 1.15rem;
+      color: var(--c-ink);
+      letter-spacing: -0.005em;
+      flex-shrink: 0;
+      text-decoration: none;
+    }
+    .top-nav-brand .dot { color: var(--c-orange); }
+    .top-nav-links {
+      display: flex;
+      gap: 4px;
+      flex: 1;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .top-nav-links a {
+      color: var(--c-muted);
+      font-size: 0.86rem;
+      font-weight: 500;
+      padding: 6px 12px;
+      border-radius: 999px;
+      text-decoration: none;
+      transition: all 0.15s ease;
+    }
+    .top-nav-links a:hover { color: var(--c-text); background: rgba(94,127,168,0.08); }
+    .top-nav-links a.active { color: var(--c-blue); background: rgba(94,127,168,0.12); }
+    .top-nav-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 14px;
+      background: var(--c-text);
+      color: #fff;
+      border-radius: 999px;
+      font-size: 0.84rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: transform 0.15s ease, background 0.15s ease;
+    }
+    .top-nav-cta:hover { background: var(--c-rose); color: #fff; transform: translateY(-1px); }
+    @media (max-width: 820px) {
+      .top-nav-links { display: none; }
+    }
+
+    /* ---------- Hero ---------- */
+    .hero-wrap {
+      position: relative;
+      overflow: hidden;
+      padding: 36px 24px 56px;
+      background: var(--c-bg);
+    }
+    .hero-grid::before {
+      content: "";
+      position: absolute; inset: 0;
+      background-image:
+        linear-gradient(rgba(20,24,31,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(20,24,31,0.04) 1px, transparent 1px);
+      background-size: 40px 40px;
+      mask-image: radial-gradient(ellipse 70% 50% at 50% 35%, #000 35%, transparent 75%);
+      -webkit-mask-image: radial-gradient(ellipse 70% 50% at 50% 35%, #000 35%, transparent 75%);
+      pointer-events: none;
+    }
+    .hero-inner {
+      position: relative;
+      max-width: var(--container);
+      margin: 0 auto;
+      text-align: center;
+    }
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0;
+      border-radius: 0;
+      font-family: 'Newsreader', serif;
+            font-size: 0.92rem;
+      font-weight: 400;
+      letter-spacing: 0.04em;
+      color: var(--c-muted);
+      background: transparent;
+      border: none;
+    }
+    .hero-eyebrow::before, .hero-eyebrow::after {
+      content: "";
+      display: inline-block;
+      width: 28px; height: 1px;
+      background: var(--c-orange-deep);
+      vertical-align: middle;
+      opacity: 0.6;
+    }
+
+    .hero-title {
+      font-family: var(--font-serif);
+      font-weight: 600;
+      font-style: italic;
+      font-size: clamp(2.2rem, 5.0vw, 4.2rem);
+      line-height: 1.08;
+      letter-spacing: -0.012em;
+      color: var(--c-ink);
+      margin: 18px auto 14px;
+      max-width: 980px;
+    }
+    /* Color of the gradient title text is set by the shimmer rules below. */
+    .hero-title .robot {
+      display: inline-block;
+      cursor: pointer;
+      vertical-align: -0.16em;
+      transform-origin: 50% 50%;
+    }
+
+    /* ===== Faceted icosphere (filled by JavaScript) ===== */
+    .sphere {
+      width: 1.05em;
+      height: 1.05em;
+      filter: drop-shadow(0 6px 14px rgba(232, 138, 60, 0.32))
+              drop-shadow(0 0 8px rgba(232, 138, 60, 0.18));
+      transition: transform 0.25s ease;
+    }
+    .sphere:hover { transform: scale(1.05); }
+    .sphere polygon { transition: opacity 0.2s ease; }
+    .hero-subtitle {
+      max-width: 760px;
+      margin: 8px auto 26px;
+      font-family: 'Newsreader', serif;
+      font-size: clamp(1.04rem, 1.5vw, 1.22rem);
+      color: var(--c-muted);
+      line-height: 1.55;
+          }
+
+    .hero-authors {
+      max-width: 920px;
+      margin: 18px auto 8px;
+      font-family: 'Newsreader', serif;
+      font-size: 1.08rem;
+      color: var(--c-text);
+      line-height: 1.9;
+    }
+    .hero-authors a {
+      color: var(--c-text);
+      text-decoration: none;
+      transition: color 0.15s ease;
+      font-weight: 500;
+    }
+    .hero-authors a:hover { color: var(--c-orange-deep); }
+    .hero-authors sup { color: var(--c-soft); font-weight: 400; }
+
+    .hero-aff {
+      margin: 6px auto 14px;
+      color: var(--c-muted);
+      font-size: 1rem;
+          }
+    .hero-aff sup { color: var(--c-soft); }
+    .hero-notes { margin-top: 6px; font-size: 0.88rem; color: var(--c-soft); font-style: italic; }
+    .hero-notes a { color: var(--c-orange-deep); text-decoration: none; }
+    .hero-notes a:hover { text-decoration: underline; }
+
+    /* Hero CTA buttons — parchment academic style */
+    .cta-row {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 24px 0 12px;
+    }
+    .cta-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 18px;
+      border-radius: 999px;
+      font-family: 'Newsreader', 'Charter', serif;
+      font-weight: 500;
+      font-size: 1rem;
+      text-decoration: none;
+      border: 1px solid var(--c-ink);
+      transition: all 0.18s ease;
+      box-shadow: 0 1px 0 rgba(28,24,20,0.05);
+    }
+    .cta-btn .icon { display: inline-flex; align-items: center; }
+    .cta-btn-primary { background: var(--c-ink); color: #fbf9ef; }
+    .cta-btn-primary:hover { background: var(--c-orange-deep); border-color: var(--c-orange-deep); transform: translateY(-1px); }
+    .cta-btn-ghost   { background: transparent; color: var(--c-ink); }
+    .cta-btn-ghost:hover { background: var(--c-ink); color: var(--c-bg); transform: translateY(-1px); }
+    .cta-btn-rose    { background: var(--c-orange-deep); color: #fbf9ef; border-color: var(--c-orange-deep); }
+    .cta-btn-rose:hover { background: var(--c-orange); border-color: var(--c-orange); transform: translateY(-1px); }
+    .cta-btn:visited { color: inherit; }
+
+    .affiliation-logos {
+      margin-top: 22px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 36px;
+      flex-wrap: wrap;
+      opacity: 0.92;
+    }
+    .affiliation-logos img {
+      height: 38px;
+      width: auto;
+      object-fit: contain;
+      filter: grayscale(0.15);
+      transition: filter 0.2s ease, transform 0.2s ease;
+    }
+    /* Square crest-style logos (just emblem, no wordmark) get a slightly larger
+       height so they balance visually with wide wordmarked logos. */
+    .affiliation-logos img.crest { height: 50px; }
+    .affiliation-logos img:hover { filter: grayscale(0); transform: translateY(-1px); }
+
+    /* ---------- Sections ---------- */
+    .section-x {
+      max-width: var(--container);
+      margin: 0 auto;
+      padding: 72px 24px;
+    }
+    .section-x.tight { padding-top: 36px; padding-bottom: 36px; }
+
+    .section-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-family: 'Newsreader', serif;
+            font-size: 0.96rem;
+      font-weight: 400;
+      letter-spacing: 0.04em;
+      color: var(--c-orange-deep);
+      margin-bottom: 8px;
+      text-transform: none;
+    }
+    .section-eyebrow::before {
+      content: "";
+      width: 28px; height: 1px;
+      background: var(--c-orange-deep);
+      opacity: 0.55;
+      border-radius: 0;
+    }
+    .section-title {
+      font-family: 'Newsreader', 'Charter', 'Georgia', serif;
+      font-weight: 600;
+      font-size: clamp(1.8rem, 3vw, 2.4rem);
+      line-height: 1.15;
+      letter-spacing: -0.005em;
+      color: var(--c-ink);
+      margin: 0 0 14px;
+    }
+    .section-lead {
+      max-width: 820px;
+      font-family: 'Newsreader', serif;
+      font-size: 1.12rem;
+      line-height: 1.6;
+      color: var(--c-text);
+    }
+    .section-lead .hl-blue { color: var(--c-blue-deep); }
+    .section-lead .hl-rose { color: var(--c-orange-deep); font-weight: 600; }
+    .section-lead b { color: var(--c-ink); font-weight: 600; }
+
+    .section-head {
+      text-align: center;
+      max-width: 820px;
+      margin: 0 auto 28px;
+    }
+    .section-head .section-eyebrow { justify-content: center; }
+    .section-head .section-eyebrow::before {
+      width: 22px;
+    }
+
+    /* ---------- Stat strip ---------- */
+    .stat-strip {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      margin: 26px 0 0;
+    }
+    @media (max-width: 760px) { .stat-strip { grid-template-columns: repeat(2, 1fr); } }
+    .stat-cell {
+      background: var(--c-surface);
+      border: 1px solid var(--c-border);
+      border-radius: var(--r-md);
+      padding: 18px 16px;
+      text-align: center;
+      box-shadow: var(--shadow-sm);
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+    .stat-cell:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+    .stat-num {
+      font-family: 'Newsreader', 'Charter', serif;
+      font-weight: 600;
+            color: var(--c-orange-deep);
+      font-size: 2.1rem;
+      line-height: 1;
+      letter-spacing: -0.01em;
+    }
+    .stat-label {
+      color: var(--c-muted);
+      font-family: 'Newsreader', serif;
+      font-size: 0.96rem;
+            margin-top: 6px;
+    }
+
+    /* ---------- Findings cards ---------- */
+    .findings-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+      margin-top: 8px;
+    }
+    @media (max-width: 900px) { .findings-grid { grid-template-columns: 1fr; } }
+    .finding-card {
+      position: relative;
+      background: var(--c-surface);
+      border: 1px solid var(--c-border);
+      border-radius: var(--r-lg);
+      padding: 22px 22px 20px;
+      box-shadow: var(--shadow-sm);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      overflow: hidden;
+    }
+    .finding-card::before {
+      content: "";
+      position: absolute;
+      left: 0; top: 0; bottom: 0; width: 3px;
+      background: var(--c-orange-deep);
+    }
+    .finding-card:nth-child(2)::before { background: var(--c-blue-deep); }
+    .finding-card:nth-child(3)::before { background: var(--c-amber); }
+    .finding-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+    .finding-icon {
+      width: 40px; height: 40px;
+      border-radius: 10px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(198,111,31,0.12);
+      color: var(--c-orange-deep);
+      font-size: 1.15rem;
+      margin-bottom: 14px;
+    }
+    .finding-card:nth-child(2) .finding-icon {
+      background: rgba(63,95,135,0.12); color: var(--c-blue-deep);
+    }
+    .finding-card:nth-child(3) .finding-icon {
+      background: rgba(184,137,63,0.16); color: var(--c-amber);
+    }
+    .finding-title {
+      font-family: 'Newsreader', 'Charter', serif;
+      font-weight: 600;
+            color: var(--c-ink);
+      font-size: 1.18rem;
+      margin-bottom: 8px;
+      letter-spacing: -0.005em;
+    }
+    .finding-body {
+      font-family: 'Newsreader', serif;
+      font-size: 1.02rem;
+      color: var(--c-muted);
+      line-height: 1.55;
+    }
+    .finding-body b { color: var(--c-ink); font-weight: 600; }
+    .finding-body .hl-blue { color: var(--c-blue-deep); }
+
+    /* ---------- Figure layout ---------- */
+    .fig-block {
+      text-align: center;
+      margin: 26px auto 14px;
+    }
+    .fig-block a {
+      display: inline-block;
+      max-width: 100%;
+      cursor: zoom-in;
+      transition: transform 0.18s ease;
+    }
+    .fig-block a:hover { transform: translateY(-2px); }
+    .fig-block img {
+      display: block;
+      margin: 0 auto;
+      max-width: 100%;
+      max-height: 480px;
+      width: auto;
+      height: auto;
+      border-radius: var(--r-md);
+      object-fit: contain;
+      /* Transparent figures now sit directly on the parchment background. */
+      background: transparent;
+      transition: filter 0.18s ease, transform 0.18s ease;
+    }
+    .fig-block a:hover img {
+      filter: drop-shadow(0 4px 18px rgba(28, 24, 20, 0.10));
+      transform: translateY(-1px);
+    }
+    .fig-block.fig-xs   img { max-width: 28%; max-height: 380px; }
+    .fig-block.fig-sm   img { max-width: 38%; max-height: 380px; }
+    .fig-block.fig-md   img { max-width: 56%; max-height: 440px; }
+    .fig-block.fig-lg   img { max-width: 72%; max-height: 460px; }
+    .fig-block.fig-xl   img { max-width: 92%; max-height: 520px; }
+    .fig-block.fig-full img { max-width: 100%; max-height: 540px; }
+    .fig-block.fig-wide img { max-width: 100%; max-height: 280px; }
+    /* No frame for diagrams that already have whitespace */
+    .fig-block.flat img { box-shadow: none; background: transparent; }
+
+    .fig-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 22px;
+      align-items: end;
+      margin: 22px 0 6px;
+    }
+    .fig-row .fig-block { margin: 0; }
+    .fig-row .fig-block img { max-height: 360px; }
+    .fig-row.fig-row-1-2 { grid-template-columns: 1fr 2fr; }
+    @media (max-width: 760px) {
+      .fig-row, .fig-row.fig-row-1-2 { grid-template-columns: 1fr; }
+    }
+
+    .fig-caption {
+      font-family: 'Newsreader', serif;
+      font-size: 1rem;
+      color: var(--c-muted);
+      margin: 14px auto 0;
+      line-height: 1.55;
+      max-width: 880px;
+          }
+    .fig-caption b { color: var(--c-ink); font-weight: 600; font-style: normal; }
+
+    /* ---------- Carousel theming ---------- */
+    .results-carousel { overflow: hidden; }
+    .item-comic, .item-video {
+      margin: 0 8px;
+      border-radius: var(--r-md);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+      /* Transparent so the parchment shows through behind transparent PNGs */
+      background: transparent;
+      position: relative;
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+    /* Videos still need a black backplate (no transparent video) */
+    .item-video { background: #000; }
+    .item-comic:hover, .item-video:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-md);
+    }
+    .item-comic a {
+      display: block; width: 100%; height: 100%;
+      cursor: zoom-in;
+    }
+    .item-comic img {
+      width: 100%; height: 100%;
+      object-fit: cover; display: block;
+    }
+
+    /* ---------- Robot-rollout video grid ----------
+       We bypass the carousel for videos: it has known portrait-video sizing
+       issues. A plain CSS grid is more reliable and Cambrian-S-style. */
+    .video-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 16px;
+      margin: 28px auto 0;
+    }
+    @media (max-width: 1080px) { .video-grid { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width:  820px) { .video-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width:  520px) { .video-grid { grid-template-columns: 1fr; } }
+
+    .video-tile {
+      position: relative;
+      background: #000;
+      border-radius: var(--r-md);
+      overflow: hidden;
+      aspect-ratio: 320 / 540;
+      box-shadow: 0 1px 2px rgba(28,24,20,0.06), 0 6px 18px rgba(28,24,20,0.06);
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+    .video-tile:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 4px 22px rgba(28,24,20,0.12);
+    }
+    .video-tile video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .video-tile .video-caption {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      padding: 18px 12px 10px;
+      background: linear-gradient(180deg, transparent, rgba(0,0,0,0.78));
+      color: #fff;
+      font-family: var(--font-serif);
+      font-size: 0.88rem;
+      font-weight: 500;
+      letter-spacing: 0.005em;
+      text-align: center;
+      pointer-events: none;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .comic-caption, .video-caption {
+      position: absolute;
+      bottom: 0; left: 0;
+      width: 100%;
+      background: linear-gradient(180deg, transparent, rgba(0,0,0,0.75));
+      color: #fff;
+      font-size: 0.84rem;
+      padding: 18px 12px 10px;
+      text-align: center;
+      font-family: 'Inter', sans-serif;
+      font-weight: 500;
+      pointer-events: none;
+      letter-spacing: 0.005em;
+    }
+
+    .slider-navigation-previous,
+    .slider-navigation-next {
+      background-color: var(--c-text) !important;
+      border-color: var(--c-text) !important;
+      color: #fff !important;
+      opacity: 0.7;
+      transition: all 0.2s ease;
+    }
+    .slider-navigation-previous:hover,
+    .slider-navigation-next:hover {
+      background-color: var(--c-rose) !important;
+      border-color: var(--c-rose) !important;
+      opacity: 1;
+    }
+
+    /* ---------- Video placeholder ---------- */
+    .video-placeholder {
+      aspect-ratio: 16 / 9;
+      background: linear-gradient(135deg, #1d212a 0%, #2a3140 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      color: rgba(255,255,255,0.7);
+      font-size: 0.92rem;
+      gap: 12px;
+      padding: 20px;
+      text-align: center;
+    }
+    .video-placeholder i { font-size: 2rem; opacity: 0.6; }
+    .video-placeholder code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      background: rgba(255,255,255,0.08);
+      padding: 4px 8px;
+      border-radius: 6px;
+      color: rgba(255,255,255,0.9);
+    }
+
+    /* ---------- Citation block (parchment ink) ---------- */
+    .cite-card {
+      position: relative;
+      background: #1c1814;
+      color: #e7e2d4;
+      border-radius: var(--r-lg);
+      padding: 22px 26px 24px;
+      box-shadow: 0 4px 18px rgba(28,24,20,0.25);
+      overflow-x: auto;
+    }
+    .cite-card pre {
+      margin: 0;
+      padding: 0;
+      background: transparent;
+      color: inherit;
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      font-size: 0.86rem;
+      line-height: 1.55;
+      white-space: pre;
+    }
+    .cite-card .cite-key  { color: #c1d3ee; }
+    .cite-card .cite-str  { color: #f4c89e; }
+    .cite-card .cite-cmd  { color: var(--c-orange-light); }
+
+    .copy-btn {
+      position: absolute;
+      top: 14px; right: 14px;
+      background: rgba(255,255,255,0.06);
+      color: #cfd6e0;
+      border: 1px solid rgba(255,255,255,0.10);
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.18s ease;
+    }
+    .copy-btn:hover { background: rgba(255,255,255,0.14); color: #fff; }
+    .copy-btn.copied { background: var(--c-emerald); border-color: var(--c-emerald); color: #fff; }
+
+    /* ---------- Section divider ---------- */
+    .divider {
+      max-width: var(--container);
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+    .divider-line {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--c-border) 20%, var(--c-border) 80%, transparent);
+    }
+
+    /* ---------- Footer (parchment ink) ---------- */
+    footer.site-footer {
+      background: #1c1814;
+      color: #b9b0a3;
+      padding: 36px 24px 32px;
+      margin-top: 24px;
+    }
+    .footer-inner {
+      max-width: var(--container);
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      text-align: center;
+      font-family: 'Newsreader', serif;
+    }
+    .footer-inner a { color: #e7e2d4; text-decoration: none; }
+    .footer-inner a:hover { color: var(--c-orange-light); }
+    .footer-icons { display: flex; gap: 16px; font-size: 1.2rem; }
+
+    /* ---------- Scroll fade-in ---------- */
+    .reveal {
+      opacity: 0;
+      transform: translateY(14px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+    .reveal.in {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .reveal { opacity: 1; transform: none; }
+      html { scroll-behavior: auto; }
+    }
+
+    /* Misc */
+    a { color: var(--c-blue); }
+    ::selection { background: rgba(202,111,111,0.25); }
+  </style>
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="./static/js/bulma-carousel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js"></script>
+</head>
+
+<body>
+
+  <!-- ============== Scroll progress bar ============== -->
+  <div class="scroll-progress" id="scroll-progress"></div>
+
+  <!-- ============== Side dot navigation ============== -->
+  <nav class="dot-nav" id="dot-nav" aria-label="page sections">
+    <a href="#top"      data-label="Top"          aria-label="Top"></a>
+    <a href="#abstract" data-label="Abstract"     aria-label="Abstract"></a>
+    <a href="#findings" data-label="Findings"     aria-label="Findings"></a>
+    <a href="#method"   data-label="Method"       aria-label="Method"></a>
+    <a href="#data"     data-label="Data"         aria-label="Data"></a>
+    <a href="#scaling"  data-label="Scaling"      aria-label="Scaling"></a>
+    <a href="#transfer" data-label="Transfer"     aria-label="Transfer"></a>
+    <a href="#real"     data-label="Real-World"   aria-label="Real-World"></a>
+    <a href="#emergent" data-label="Emergent"     aria-label="Emergent"></a>
+    <a href="#cite"     data-label="Cite"         aria-label="Cite"></a>
+  </nav>
+
+  <!-- ============== Sticky top nav ============== -->
+  <nav class="top-nav">
+    <div class="top-nav-inner">
+      <a href="#top" class="top-nav-brand">
+        <span class="dot">Ego</span>nomy
+      </a>
+      <div class="top-nav-links">
+        <a href="#abstract">Abstract</a>
+        <a href="#findings">Findings</a>
+        <a href="#method">Method</a>
+        <a href="#data">Data</a>
+        <a href="#scaling">Scaling</a>
+        <a href="#transfer">Transfer</a>
+        <a href="#real">Real-World</a>
+        <a href="#emergent">Emergent</a>
+        <a href="#cite">Cite</a>
+      </div>
+      <a href="#" class="top-nav-cta">
+        <i class="fas fa-file-pdf"></i> Paper
+      </a>
+    </div>
+  </nav>
+
+  <!-- ============== Fresco hero banner ============== -->
+  <section id="top" class="hero-fresco" aria-label="The Creation of Egonomy">
+    <span class="hero-corner">
+      <span class="dot"></span> The Creation of <em>Egonomy</em> &nbsp;·&nbsp; after Michelangelo
+    </span>
+    <img class="hero-image" src="img/hero_creation.png" alt="A Sistine-Chapel-style fresco depicting God reaching out to a humanoid robot, symbolizing human-robot co-training" />
+    <a class="scroll-hint" href="#hero-text" aria-label="Scroll to title">
+      Scroll <i class="fas fa-chevron-down"></i>
+    </a>
+  </section>
+
+  <!-- ============== Title / Authors / CTAs ============== -->
+  <header id="hero-text" class="hero-wrap">
+    <div class="hero-inner">
+      <!-- <span class="hero-eyebrow">Preprint &nbsp;·&nbsp; 2026</span> -->
+
+      <h1 class="hero-title">
+        <!-- Faceted icosphere (multi-dimensional sphere). The 20 triangle
+             faces are populated and animated by JavaScript with proper
+             3D rotation, depth sorting and per-face Lambert shading. -->
+        <svg class="robot sphere" id="robot-indicator" viewBox="-58 -58 116 116" aria-label="multi-dimensional sphere" role="img">
+          <defs>
+            <radialGradient id="sphere-halo" cx="50%" cy="50%" r="55%">
+              <stop offset="74%" stop-color="rgba(232,138,60,0)"/>
+              <stop offset="92%" stop-color="rgba(232,138,60,0.22)"/>
+              <stop offset="100%" stop-color="rgba(232,138,60,0)"/>
+            </radialGradient>
+            <radialGradient id="sphere-spec" cx="32%" cy="28%" r="22%">
+              <stop offset="0%"   stop-color="rgba(255,255,255,0.55)"/>
+              <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+            </radialGradient>
+          </defs>
+          <!-- atmospheric halo -->
+          <circle r="55" fill="url(#sphere-halo)"/>
+          <!-- 20 faces drawn here, depth-sorted, by JS -->
+          <g id="ico-faces"></g>
+          <!-- specular highlight overlay -->
+          <ellipse cx="-19" cy="-22" rx="13" ry="8" fill="url(#sphere-spec)"/>
+        </svg>
+        <span class="word-ego">Ego</span><span class="word-nomy">nomy</span>:
+        Scaling and Transferability Laws<br/>of Human-Robot Co-training
+      </h1>
+      <p class="hero-subtitle">
+        A controlled empirical study of how <b>23,000 hours</b> of human data
+        scale and transfer into real-world robot policies.
+      </p>
+
+      <div class="hero-authors">
+        <a href="https://scholar.google.com/citations?user=-JCRysgAAAAJ&hl=zh-CN">Qingwen Bu</a><sup>1,3,*</sup>,
+        <a href="https://mingyulau.github.io/">Mingyu Liu</a><sup>2,3,*</sup>,
+        <a href="https://sephyli.github.io/">Tianyu Li</a><sup>1</sup>,
+        <a href="https://scholar.google.com/citations?user=JONwde0AAAAJ">Mengfei Du</a><sup>3</sup>,
+        <a href="https://scholar.google.com/citations?user=h5hd0O8AAAAJ&hl=zh-CN">Haiqin Cui</a><sup>3</sup>,
+        <a href="https://rainbow979.github.io/">Siyuan Zhou</a><sup>3</sup>,
+        <a href="#">Hongwu Li</a><sup>3</sup>,
+        <a href="https://heyuanyao-pku.github.io/">Heyuan Yao</a><sup>3</sup>,
+        <a href="https://libertfan.github.io/">Zhihao Fan</a><sup>3</sup>,
+        <a href="https://cshen.github.io/">Chunhua Shen</a><sup>2</sup>,
+        <a href="#">Guang Shi</a><sup>3,&dagger;</sup>,
+        <a href="https://lihongyang.info/">Hongyang Li</a><sup>1,&dagger;</sup>
+      </div>
+
+      <div class="hero-aff">
+        <sup>1</sup>The University of Hong Kong &nbsp;·&nbsp;
+        <sup>2</sup>Zhejiang University &nbsp;·&nbsp;
+        <sup>3</sup>ByteDance Seed
+      </div>
+      <div class="hero-notes">
+        * Equal Contribution &nbsp;·&nbsp; &dagger; Corresponding Authors
+      </div>
+
+      <div class="cta-row">
+        <a href="#" class="cta-btn cta-btn-primary">
+          <span class="icon"><i class="fas fa-file-pdf"></i></span>
+          <span>Paper</span>
+        </a>
+        <a href="#" class="cta-btn cta-btn-ghost">
+          <span class="icon"><i class="ai ai-arxiv"></i></span>
+          <span>arXiv</span>
+        </a>
+
+        <a href="#real" class="cta-btn cta-btn-rose">
+          <span class="icon"><i class="fas fa-play"></i></span>
+          <span>Videos</span>
+        </a>
+      </div>
+
+      <div class="affiliation-logos">
+        <img src="img/hku_logo.png" alt="The University of Hong Kong">
+        <img class="crest" src="img/zju_logo.svg" alt="Zhejiang University">
+        <img src="img/seed_logo.png" alt="ByteDance Seed">
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ============== Abstract ============== -->
+  <section id="abstract" class="section-x reveal">
+    <div class="section-head">
+      <span class="section-eyebrow">01 · Abstract</span>
+      <h2 class="section-title">Less Friction. More Transfer.</h2>
+      <p class="section-lead">
+        Scaling robot foundation models is bottlenecked by the cost of physical interaction data.
+        Human activity data is the natural surrogate &mdash;
+        <span class="hl-blue">but bridging the visual, kinematic, and dynamic embodiment gap is far from solved</span>.
+        We present <span class="hl-rose">Egonomy</span>, a controlled empirical study of the scaling and
+        transferability laws of human&#8209;robot co&#8209;training, spanning 23,000+ hours of human
+        data and three action representations.
+      </p>
+    </div>
+
+    <!-- Static teaser figure (replaced the rotating carousel) -->
+    <div class="fig-block fig-full" style="margin-top: 30px;">
+      <a href="img/teaser.png" data-fancybox="hero" data-caption="Egonomy: Overview of human-robot co-training">
+        <img src="img/teaser.png" alt="Egonomy — Overview of human-robot co-training">
+      </a>
+    </div>
+
+    <div class="stat-strip">
+      <div class="stat-cell"><div class="stat-num counter" data-target="23000" data-suffix="">0</div><div class="stat-label">hours of human data</div></div>
+      <div class="stat-cell"><div class="stat-num counter" data-target="3"      data-suffix="">0</div><div class="stat-label">action representations</div></div>
+      <div class="stat-cell"><div class="stat-num counter" data-target="4"      data-suffix="">0</div><div class="stat-label">generalization axes</div></div>
+      <div class="stat-cell"><div class="stat-num counter" data-target="3000"   data-suffix="">0</div><div class="stat-label">UMI-like environments</div></div>
+    </div>
+
+    <!-- Highlights strip with starred badges
+    <div class="highlights-strip" style="margin-top: 26px;">
+      <div class="highlight-cell">
+        <span class="star">★ NEW</span>
+        <div class="label">Scaling</div>
+        <div class="desc">Predictable laws across 23,000+ h of human data.</div>
+      </div>
+      <div class="highlight-cell">
+        <span class="star">★ NEW</span>
+        <div class="label">Transfer</div>
+        <div class="desc">Robust 4-axis transfer to real bimanual robots.</div>
+      </div>
+      <div class="highlight-cell">
+        <span class="star">★ NEW</span>
+        <div class="label">Emergent</div>
+        <div class="desc">Zero-shot inference-time steering by human videos.</div>
+      </div>
+      <div class="highlight-cell">
+        <span class="star">★ HONEST</span>
+        <div class="label">Limits</div>
+        <div class="desc">A clear map of the dexterous frontier.</div>
+      </div>
+    </div> -->
+
+    <div class="big-numeral">01</div>
+  </section>
+
+  <div class="divider"><div class="divider-line"></div></div>
+
+  <!-- ============== Findings ============== -->
+  <section id="findings" class="section-x reveal">
+    <div class="section-head">
+      <span class="section-eyebrow">02 · TL;DR</span>
+      <h2 class="section-title">Three Principal Findings</h2>
+    </div>
+
+    <div class="findings-grid">
+      <div class="finding-card tilt">
+        <span class="finding-glow"></span>
+        <div class="finding-icon"><i class="fas fa-chart-line"></i></div>
+        <div class="finding-title">Scaling Laws &amp; the Primacy of Diversity</div>
+        <div class="finding-body">
+          Validation loss improves <b>log-linearly</b> with data volume; downstream success follows a
+          <b>quadratic-log</b> trajectory. <span class="hl-blue">Environmental and task diversity</span>
+          drives generalization more than raw volume.
+        </div>
+      </div>
+
+      <div class="finding-card tilt">
+        <span class="finding-glow"></span>
+        <div class="finding-icon"><i class="fas fa-arrows-rotate"></i></div>
+        <div class="finding-title">Transferability of Human-Robot Co-training</div>
+        <div class="finding-body">
+          With a controlled co-training protocol, we observe robust transfer along
+          <span class="hl-blue">spatial, semantic, object and scene</span> axes &mdash;
+          but only after <b>large-scale pre-training</b>.
+        </div>
+      </div>
+
+      <div class="finding-card tilt">
+        <span class="finding-glow"></span>
+        <div class="finding-icon"><i class="fas fa-wand-magic-sparkles"></i></div>
+        <div class="finding-title">Emergent Steerability &amp; Limits</div>
+        <div class="finding-body">
+          Co-training unlocks <span class="hl-blue">zero-shot inference-time steering</span>: sparse human
+          videos can dictate motion, target, and temporal structure. Truly novel or dexterous skills still
+          require explicit kinematic grounding.
+        </div>
+      </div>
+    </div>
+
+    <div class="big-numeral">02</div>
+  </section>
+
+  <div class="divider"><div class="divider-line"></div></div>
+
+  <!-- ============== Method ============== -->
+  <section id="method" class="section-x reveal">
+    <div class="section-head">
+      <span class="section-eyebrow">03 · Method</span>
+      <h2 class="section-title">A Unified Co-training Recipe</h2>
+    </div>
+
+    <div class="section-lead" style="margin: 0 auto;">
+      We unify three forms of supervision under a single autoregressive policy:
+      <span class="hl-blue">latent actions</span> from in-the-wild video,
+      <span class="hl-blue">MANO-recovered hand trajectories</span> from egocentric video, and
+      <span class="hl-blue">metrically grounded 7-DoF end-effector poses</span> from UMI-like recordings.
+      Each modality is decoded into <i>plain text tokens</i>, allowing all data sources to live in the
+      <b>same training mixture</b> without bespoke heads. Co-training maximizes positive transfer across
+      embodiments, while a small budget of in-domain robot data anchors the policy to executable controls.
+    </div>
+
+    <div class="big-numeral">03</div>
+  </section>
+
+  <div class="divider"><div class="divider-line"></div></div>
+
+  <!-- ============== Data Spectrum ============== -->
+  <section id="data" class="section-x reveal">
+    <div class="section-head">
+      <span class="section-eyebrow">04 · Data</span>
+      <h2 class="section-title">The Human Data Spectrum</h2>
+      <p class="section-lead">
+        We instantiate a controlled trade-off across three forms of human supervision.
+        <span class="hl-blue">Latent actions</span> are maximally scalable but abstract;
+        <span class="hl-blue">3D hand trajectories</span> are geometrically grounded yet bridge a hand-to-gripper gap;
+        and <span class="hl-blue">UMI-like 7-DoF end-effector trajectories</span> are metrically precise.
+      </p>
+    </div>
+
+    <div class="fig-block fig-wide">
+      <a href="img/egovid.png" data-fancybox="data" data-caption="EgoVid: web-crawled and self-collected egocentric videos">
+        <img src="img/egovid.png" alt="EgoVid">
+      </a>
+      <div class="fig-caption">
+        <b>EgoVid.</b> ~6,000 h of web-crawled POV video and ~2,000 h of self-collected
+        head-mounted egocentric footage, automatically filtered, segmented and language-annotated.
+      </div>
+    </div>
+
+    <div class="fig-row fig-row-1-2">
+      <div class="fig-block flat">
+        <a href="img/lam.png" data-fancybox="data" data-caption="Latent Action Model: VQ-VAE bottleneck on DINO features">
+          <img src="img/lam.png" alt="LAM" style="max-width: 72%; max-height: 240px;">
+        </a>
+        <div class="fig-caption">
+          <b>Latent Action Model.</b> VQ-VAE codes (size 32) capture motion-centric transitions between
+          DINOv3-encoded frame pairs.
+        </div>
+      </div>
+      <div class="fig-block">
+        <a href="img/hand_traj.png" data-fancybox="data" data-caption="3D hand-trajectory reconstruction pipeline">
+          <img src="img/hand_traj.png" alt="Hand Trajectory">
+        </a>
+        <div class="fig-caption">
+          <b>3D Hand Trajectory.</b> A feed-forward pipeline fuses MANO wrist poses, &pi;<sup>3</sup> camera
+          tracking and UniDepthV2 metric depth &mdash; no SLAM iteration required.
+        </div>
+      </div>
+    </div>
+
+    <div class="big-numeral">04</div>
+  </section>
+
+  <div class="divider"><div class="divider-line"></div></div>
+
+  <!-- ============== Scaling Laws ============== -->
+  <section id="scaling" class="section-x reveal">
+    <div class="section-head">
+      <span class="section-eyebrow">05 · Scaling</span>
+      <h2 class="section-title">Predictable Scaling Laws</h2>
+      <p class="section-lead">
+        Across both offline metrics and real-world success rates, policy quality improves <b>predictably</b>
+        as we add human data &mdash; no plateau is visible at our largest scale.
+      </p>
+    </div>
+
+    <div class="fig-block fig-full">
+      <a href="img/succ_scaling.png" data-fancybox="scaling" data-caption="Real-world success follows a quadratic-log trajectory">
+        <img src="img/succ_scaling.png" alt="Success Scaling">
+      </a>
+      <div class="fig-caption">
+        <b>Success scaling.</b> Across simulation and real benchmarks, downstream success follows a
+        <b>quadratic-log</b> trajectory as pre-training data grows.
+      </div>
+    </div>
+
+    <div class="fig-block fig-sm flat">
+      <a href="img/loss_scaling.png" data-fancybox="scaling" data-caption="Validation loss improves log-linearly with human data volume">
+        <img src="img/loss_scaling.png" alt="Loss Scaling">
+      </a>
+      <div class="fig-caption"><b>Loss scaling.</b> Offline validation loss is <b>log-linear</b> in human data volume.</div>
+    </div>
+
+    <div class="big-numeral">05</div>
+  </section>
+
+  <div class="divider"><div class="divider-line"></div></div>
+
+  <!-- ============== Transfer ============== -->
+  <section id="transfer" class="section-x reveal">
+    <div class="section-head">
+      <span class="section-eyebrow">06 · Transfer</span>
+      <h2 class="section-title">Four Axes of Transfer</h2>
+      <p class="section-lead">
+        Co-trained policies <b>consistently outperform</b> robot-only baselines on out-of-distribution evaluations.
+        Different human data streams shape different generalization axes &mdash; and
+        <span class="hl-blue">large-scale pre-training is indispensable</span>.
+      </p>
+    </div>
+
+    <div class="fig-block fig-full">
+      <a href="img/transfer.png" data-fancybox="transfer" data-caption="Spatial / Semantic / Object / Scene generalization protocol">
+        <img src="img/transfer.png" alt="Transfer">
+      </a>
+      <div class="fig-caption">
+        <b>Controlled four-axis evaluation.</b> Robot data covers only in-domain conditions; human data injects out-of-distribution
+        coverage along <span style="color:var(--c-blue-deep);">spatial</span>, <span style="color:var(--c-blue-deep);">semantic</span>,
+        <span style="color:var(--c-blue-deep);">object</span> and <span style="color:var(--c-blue-deep);">scene</span> axes.
+      </div>
+    </div>
+
+    <div class="fig-block fig-md">
+      <a href="img/post_train.png" data-fancybox="transfer" data-caption="Post-training: small in-domain robot budget + large pre-trained policy">
+        <img src="img/post_train.png" alt="Post-train">
+      </a>
+      <div class="fig-caption">
+        <b>Post-training.</b> Pre-training on diverse human data is what unlocks transfer; a small in-domain
+        robot budget is enough to ground precise execution.
+      </div>
+    </div>
+
+    <div class="fig-block fig-wide">
+      <a href="img/abl_cotrain.png" data-fancybox="transfer" data-caption="Co-training ablation across data sources">
+        <img src="img/abl_cotrain.png" alt="Cotrain Ablation">
+      </a>
+      <div class="fig-caption">
+        <b>Co-training ablation.</b> Latent actions drive semantic and visual robustness;
+        trajectory supervision is required for spatial reasoning and articulated manipulation.
+      </div>
+    </div>
+
+    <div class="big-numeral">06</div>
+  </section>
+
+  <div class="divider"><div class="divider-line"></div></div>
+
+  <!-- ============== Real-World ============== -->
+  <section id="real" class="section-x reveal">
+    <div class="section-head">
+      <span class="section-eyebrow">07 · Real-World</span>
+      <h2 class="section-title">Real-World Manipulation</h2>
+      <p class="section-lead">
+        On a bimanual platform, Egonomy delivers consistent gains across both in-distribution and
+        out-of-distribution settings &mdash; precisely where teleoperated robot data is least scalable.
+        <span class="hl-blue">Hover</span> to pause the rollouts below.
+      </p>
+    </div>
+
+    <div class="video-grid">
+      <div class="video-tile">
+        <video autoplay muted loop playsinline preload="metadata"
+               poster="" src="video/pnp_apple.mp4"></video>
+        <div class="video-caption">"pick &amp; place the apple"</div>
+      </div>
+      <div class="video-tile">
+        <video autoplay muted loop playsinline preload="metadata"
+               src="video/pnp_banana.mp4"></video>
+        <div class="video-caption">"pick &amp; place the banana"</div>
+      </div>
+      <div class="video-tile">
+        <video autoplay muted loop playsinline preload="metadata"
+               src="video/grasp_eggplant.mp4"></video>
+        <div class="video-caption">"grasp the eggplant"</div>
+      </div>
+      <div class="video-tile">
+        <video autoplay muted loop playsinline preload="metadata"
+               src="video/stack_bowls.mp4"></video>
+        <div class="video-caption">"stack the bowls"</div>
+      </div>
+      <div class="video-tile">
+        <video autoplay muted loop playsinline preload="metadata"
+               src="video/lift_basket.mp4"></video>
+        <div class="video-caption">"lift the basket"</div>
+      </div>
+      <div class="video-tile">
+        <video autoplay muted loop playsinline preload="metadata"
+               src="video/unscrew_cap.mp4"></video>
+        <div class="video-caption">"unscrew the bottle cap"</div>
+      </div>
+      <div class="video-tile">
+        <video autoplay muted loop playsinline preload="metadata"
+               src="video/zip_pull.mp4"></video>
+        <div class="video-caption">"pull the zipper"</div>
+      </div>
+      <div class="video-tile">
+        <video autoplay muted loop playsinline preload="metadata"
+               src="video/wipe_blackboard.mp4"></video>
+        <div class="video-caption">"wipe the blackboard"</div>
+      </div>
+    </div>
+
+    <!--
+    <div class="fig-block fig-xl">
+      <a href="img/real_id.png" data-fancybox="real" data-caption="In-distribution real-world success rates">
+        <img src="img/real_id.png" alt="Real ID">
+      </a>
+      <div class="fig-caption">
+        <b>In-distribution real-world tasks.</b> A comprehensive task suite spans tool use, precise articulation,
+        and non-prehensile manipulation. Egonomy matches or beats <em>π<sub>0.5</sub></em> across the vast majority of categories.
+      </div>
+    </div>
+
+    <div class="fig-block fig-xl">
+      <a href="img/real_ood.png" data-fancybox="real" data-caption="Out-of-distribution real-world success rates">
+        <img src="img/real_ood.png" alt="Real OOD">
+      </a>
+      <div class="fig-caption">
+        <b>Out-of-distribution real-world tasks.</b> Five generalization axes &mdash; long-horizon
+        pick-and-place, skill, semantics, composition, and spatial &mdash; where the gap widens further.
+      </div>
+    </div>
+    -->
+
+    <div class="big-numeral">07</div>
+  </section>
+
+  <div class="divider"><div class="divider-line"></div></div>
+
+  <!-- ============== Emergent ============== -->
+  <section id="emergent" class="section-x reveal">
+    <div class="section-head">
+      <span class="section-eyebrow">08 · Emergent</span>
+      <h2 class="section-title">Steerability &amp; Skill Acquisition</h2>
+      <p class="section-lead">
+        Sufficient-scale co-training aligns representations enough that
+        <span class="hl-blue">human videos can serve as behavioral context</span> for the robot policy at inference time.
+      </p>
+    </div>
+
+    <div class="fig-block fig-full">
+      <a href="img/in_context.png" data-fancybox="emergent" data-caption="Inference-time visual steering">
+        <img src="img/in_context.png" alt="In Context">
+      </a>
+      <div class="fig-caption">
+        <b>Inference-time visual steering.</b> A handful of human video frames at inference can dictate
+        <span style="color:var(--c-blue-deep);">motion direction, target object, and temporal ordering</span> &mdash;
+        with no weight updates.
+      </div>
+    </div>
+
+    <div class="big-numeral">08</div>
+  </section>
+
+  <div class="divider"><div class="divider-line"></div></div>
+
+  <!-- ============== Citation ============== -->
+  <section id="cite" class="section-x reveal">
+    <div class="section-head">
+      <span class="section-eyebrow">09 · Citation</span>
+      <h2 class="section-title">Citation</h2>
+    </div>
+
+    <div class="cite-card">
+      <button class="copy-btn" id="copy-btn" aria-label="Copy BibTeX">
+        <i class="fas fa-copy"></i> <span>Copy</span>
+      </button>
+<pre id="cite-text"><span class="cite-cmd">@article</span>{<span class="cite-key">egonomy2026</span>,
+  title   = {<span class="cite-str">Egonomy: Scaling and Transferability Laws of Human-Robot Co-training</span>},
+  author  = {<span class="cite-str">Bu, Qingwen and Liu, Mingyu and Li, Tianyu and Du, Mengfei and Cui, Haiqin
+             and Zhou, Siyuan and Li, Hongwu and Yao, Heyuan and Fan, Zhihao and Shen, Chunhua
+             and Shi, Guang and Li, Hongyang</span>},
+  <!-- journal = {<span class="cite-str">arXiv preprint</span>}, -->
+  year    = {<span class="cite-str">2026</span>}
+}</pre>
+    </div>
+
+    <div class="big-numeral">09</div>
+  </section>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-icons">
+        <a href="#" aria-label="Paper"><i class="fas fa-file-pdf"></i></a>
+        <a href="#" aria-label="arXiv"><i class="ai ai-arxiv"></i></a>
+        <!-- <a href="#" aria-label="Code"><i class="fab fa-github"></i></a> -->
+      </div>
+      <div style="font-size: 0.86rem;">
+        © 2026 Egonomy authors &nbsp;·&nbsp; Template inspired by
+        <!-- <a href="https://selen-suyue.github.io/WoGNet/">WoGNet</a> &amp; -->
+        <a href="https://nerfies.github.io">Nerfies</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // ---- 1. Faceted icosphere renderer (multi-dimensional sphere) ----
+    (function () {
+      const svg = document.getElementById('robot-indicator');
+      if (!svg) return;
+      const group = svg.querySelector('#ico-faces');
+      if (!group) return;
+
+      const NS = 'http://www.w3.org/2000/svg';
+      const PHI = (1 + Math.sqrt(5)) / 2;
+      const RADIUS = 47;
+
+      // 12 vertices of an icosahedron, normalized to a unit sphere then scaled.
+      const norm = Math.sqrt(1 + PHI * PHI);
+      const V = [
+        [0, 1, PHI], [0, 1, -PHI], [0, -1, PHI], [0, -1, -PHI],
+        [1, PHI, 0], [1, -PHI, 0], [-1, PHI, 0], [-1, -PHI, 0],
+        [PHI, 0, 1], [PHI, 0, -1], [-PHI, 0, 1], [-PHI, 0, -1]
+      ].map(v => v.map(x => x / norm * RADIUS));
+
+      // 20 triangular faces, vertex indices into V (CCW when viewed from outside).
+      const F = [
+        [0,8,4],  [0,4,6],  [0,6,10], [0,10,2], [0,2,8],
+        [1,4,9],  [1,6,4],  [1,11,6], [1,3,11], [1,9,3],
+        [2,5,8],  [2,7,5],  [2,10,7],
+        [3,9,5],  [3,5,7],  [3,7,11],
+        [4,8,9],  [5,9,8],
+        [6,11,10],[7,10,11]
+      ];
+
+      const polys = F.map(() => {
+        const p = document.createElementNS(NS, 'polygon');
+        p.setAttribute('stroke-linejoin', 'round');
+        group.appendChild(p);
+        return p;
+      });
+
+      // Vector helpers
+      const sub   = (a,b) => [a[0]-b[0], a[1]-b[1], a[2]-b[2]];
+      const cross = (a,b) => [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];
+      const dot   = (a,b) =>  a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
+      const nrm   = v => { const l = Math.hypot(v[0],v[1],v[2]); return [v[0]/l, v[1]/l, v[2]/l]; };
+      const rY    = (v,a) => { const c=Math.cos(a), s=Math.sin(a); return [v[0]*c+v[2]*s, v[1], -v[0]*s+v[2]*c]; };
+      const rX    = (v,a) => { const c=Math.cos(a), s=Math.sin(a); return [v[0], v[1]*c-v[2]*s, v[1]*s+v[2]*c]; };
+
+      // Light direction: upper-left-front
+      const LIGHT = nrm([-0.45, -0.65, 0.6]);
+
+      // Brand-aligned palette: deep blue (shadow) → mid orange → bright orange (lit)
+      const C_DARK   = [38, 58, 92];
+      const C_MID    = [186, 100, 30];
+      const C_LIT    = [255, 174, 92];
+      const lerp = (a, b, t) => [
+        a[0] + (b[0] - a[0]) * t,
+        a[1] + (b[1] - a[1]) * t,
+        a[2] + (b[2] - a[2]) * t
+      ];
+      const shade = t => (t > 0.5)
+        ? lerp(C_MID, C_LIT, (t - 0.5) * 2)
+        : lerp(C_DARK, C_MID, t * 2);
+
+      // Slight fixed tilt so the top is visible.
+      const TILT_X = 0.34;
+
+      let angle  = 0;
+      let burst  = 0;
+      let last   = performance.now();
+      const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      function draw(t) {
+        const dt = Math.min(64, t - last); last = t;
+        if (!reduced) {
+          angle += (0.00045 + burst) * dt;
+          burst *= 0.985;
+        }
+
+        // Rotate every vertex once per frame.
+        const R = V.map(v => rX(rY(v, angle), TILT_X));
+
+        // Per-face: project, normal (in screen space), Lambert lighting, depth.
+        const data = F.map((f, i) => {
+          const a = R[f[0]], b = R[f[1]], c = R[f[2]];
+          const n = nrm(cross(sub(b, a), sub(c, a)));
+          const lit  = Math.max(0.04, dot(n, LIGHT));
+          const avgZ = (a[2] + b[2] + c[2]) / 3;
+          // Cull back-faces: in our convention, faces with positive normal-z point toward viewer.
+          const visible = n[2] > 0;
+          return { i, a, b, c, lit, avgZ, visible };
+        }).filter(d => d.visible)
+          .sort((p, q) => p.avgZ - q.avgZ);
+
+        // Hide all polygons first; only re-show + reorder visible ones.
+        polys.forEach(p => p.setAttribute('opacity', '0'));
+
+        data.forEach(d => {
+          const p = polys[d.i];
+          p.setAttribute('opacity', '1');
+          p.setAttribute(
+            'points',
+            `${d.a[0].toFixed(1)},${d.a[1].toFixed(1)} ` +
+            `${d.b[0].toFixed(1)},${d.b[1].toFixed(1)} ` +
+            `${d.c[0].toFixed(1)},${d.c[1].toFixed(1)}`
+          );
+          const [r, g, b] = shade(d.lit);
+          p.setAttribute('fill',   `rgb(${r|0},${g|0},${b|0})`);
+          p.setAttribute('stroke', `rgba(255,255,255,${0.18 + d.lit * 0.42})`);
+          p.setAttribute('stroke-width', '0.55');
+          // Re-append so DOM order matches painter's-algorithm depth sort.
+          group.appendChild(p);
+        });
+
+        requestAnimationFrame(draw);
+      }
+      requestAnimationFrame(draw);
+
+      // Click: a quick acceleration burst that decays back to base speed.
+      svg.addEventListener('click', (e) => {
+        e.stopPropagation();
+        burst = 0.004;
+      });
+    })();
+
+    // ---- 2. Sticky-nav + side-dot active section ----
+    (function () {
+      const topLinks = Array.from(document.querySelectorAll('.top-nav-links a'));
+      const dotLinks = Array.from(document.querySelectorAll('#dot-nav a'));
+      const allLinks = topLinks.concat(dotLinks);
+      if (!allLinks.length) return;
+
+      const targets = new Set();
+      allLinks.forEach(a => {
+        const href = a.getAttribute('href');
+        if (href && href.startsWith('#') && href.length > 1) {
+          const el = document.querySelector(href);
+          if (el) targets.add(el);
+        }
+      });
+
+      const setActive = (id) => {
+        allLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + id));
+      };
+
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach(e => {
+          if (e.isIntersecting) setActive(e.target.id);
+        });
+      }, { rootMargin: '-40% 0px -55% 0px', threshold: 0 });
+      targets.forEach(s => io.observe(s));
+    })();
+
+    // ---- 2b. Top scroll-progress bar ----
+    (function () {
+      const bar = document.getElementById('scroll-progress');
+      if (!bar) return;
+      const update = () => {
+        const h = document.documentElement;
+        const max = h.scrollHeight - h.clientHeight;
+        const pct = max > 0 ? (h.scrollTop / max) * 100 : 0;
+        bar.style.width = pct + '%';
+      };
+      window.addEventListener('scroll', update, { passive: true });
+      window.addEventListener('resize', update);
+      update();
+    })();
+
+    // ---- 2c. Stat counters (count up on scroll into view) ----
+    (function () {
+      const counters = document.querySelectorAll('.stat-num.counter');
+      if (!counters.length || !('IntersectionObserver' in window)) {
+        counters.forEach(c => {
+          const t = parseInt(c.dataset.target || '0', 10);
+          c.textContent = formatNum(t) + (c.dataset.suffix || '');
+        });
+        return;
+      }
+      function formatNum(n) {
+        if (n >= 1000) {
+          const k = (n / 1000).toFixed(n % 1000 === 0 ? 0 : 1);
+          return k.replace(/\.0$/, '') + 'k';
+        }
+        return String(n);
+      }
+      const ease = (t) => 1 - Math.pow(1 - t, 3);
+      const animate = (el) => {
+        const target = parseInt(el.dataset.target || '0', 10);
+        const suffix = el.dataset.suffix || '';
+        const dur = 1400;
+        const t0 = performance.now();
+        const step = (now) => {
+          const p = Math.min(1, (now - t0) / dur);
+          const v = Math.round(ease(p) * target);
+          el.textContent = formatNum(v) + suffix;
+          if (p < 1) requestAnimationFrame(step);
+        };
+        requestAnimationFrame(step);
+      };
+      const io = new IntersectionObserver((entries, obs) => {
+        entries.forEach(e => {
+          if (e.isIntersecting) {
+            animate(e.target);
+            obs.unobserve(e.target);
+          }
+        });
+      }, { threshold: 0.4 });
+      counters.forEach(c => io.observe(c));
+    })();
+
+    // ---- 2d. 3D tilt + glow on .tilt cards ----
+    (function () {
+      const cards = document.querySelectorAll('.finding-card.tilt');
+      if (!cards.length) return;
+      const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      cards.forEach(card => {
+        if (reduced) return;
+        card.addEventListener('mousemove', (e) => {
+          const r = card.getBoundingClientRect();
+          const x = (e.clientX - r.left) / r.width;
+          const y = (e.clientY - r.top)  / r.height;
+          const rx = (0.5 - y) * 6;
+          const ry = (x - 0.5) * 6;
+          card.style.transform = `perspective(800px) rotateX(${rx}deg) rotateY(${ry}deg) translateY(-3px)`;
+          card.style.setProperty('--mx', (x * 100) + '%');
+          card.style.setProperty('--my', (y * 100) + '%');
+        });
+        card.addEventListener('mouseleave', () => {
+          card.style.transform = '';
+        });
+      });
+    })();
+
+    // ---- 3. Reveal-on-scroll ----
+    (function () {
+      const els = document.querySelectorAll('.reveal');
+      if (!('IntersectionObserver' in window) || !els.length) {
+        els.forEach(el => el.classList.add('in'));
+        return;
+      }
+      const io = new IntersectionObserver((entries, obs) => {
+        entries.forEach(e => {
+          if (e.isIntersecting) {
+            e.target.classList.add('in');
+            obs.unobserve(e.target);
+          }
+        });
+      }, { threshold: 0.06 });
+      els.forEach(el => io.observe(el));
+    })();
+
+    // ---- 4. Copy citation ----
+    (function () {
+      const btn = document.getElementById('copy-btn');
+      const pre = document.getElementById('cite-text');
+      if (!btn || !pre) return;
+      btn.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(pre.innerText);
+          btn.classList.add('copied');
+          btn.querySelector('span').textContent = 'Copied!';
+          btn.querySelector('i').className = 'fas fa-check';
+          setTimeout(() => {
+            btn.classList.remove('copied');
+            btn.querySelector('span').textContent = 'Copy';
+            btn.querySelector('i').className = 'fas fa-copy';
+          }, 1600);
+        } catch (err) {
+          console.warn('Copy failed', err);
+        }
+      });
+    })();
+
+    // ---- 5. Carousel + Fancybox ----
+    $(document).ready(function () {
+      if (typeof bulmaCarousel !== 'undefined') {
+        // The abstract carousel was replaced by a static teaser figure,
+        // and the videos use a plain CSS grid — no carousel needed anywhere.
+      }
+      if (typeof Fancybox !== 'undefined') {
+        Fancybox.bind('[data-fancybox]', { loop: true });
+      }
+    });
+  </script>
+</body>
+</html>
