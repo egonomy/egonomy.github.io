@@ -1438,42 +1438,42 @@
 
     <div class="video-grid">
       <div class="video-tile">
-        <video autoplay muted loop playsinline preload="metadata"
+        <video autoplay muted loop playsinline preload="auto"
                poster="" src="video/pnp_apple.mp4"></video>
         <div class="video-caption">"pick &amp; place the apple"</div>
       </div>
       <div class="video-tile">
-        <video autoplay muted loop playsinline preload="metadata"
+        <video autoplay muted loop playsinline preload="auto"
                src="video/pnp_banana.mp4"></video>
         <div class="video-caption">"pick &amp; place the banana"</div>
       </div>
       <div class="video-tile">
-        <video autoplay muted loop playsinline preload="metadata"
+        <video autoplay muted loop playsinline preload="auto"
                src="video/grasp_eggplant.mp4"></video>
         <div class="video-caption">"grasp the eggplant"</div>
       </div>
       <div class="video-tile">
-        <video autoplay muted loop playsinline preload="metadata"
+        <video autoplay muted loop playsinline preload="auto"
                src="video/stack_bowls.mp4"></video>
         <div class="video-caption">"stack the bowls"</div>
       </div>
       <div class="video-tile">
-        <video autoplay muted loop playsinline preload="metadata"
+        <video autoplay muted loop playsinline preload="auto"
                src="video/lift_basket.mp4"></video>
         <div class="video-caption">"lift the basket"</div>
       </div>
       <div class="video-tile">
-        <video autoplay muted loop playsinline preload="metadata"
+        <video autoplay muted loop playsinline preload="auto"
                src="video/unscrew_cap.mp4"></video>
         <div class="video-caption">"unscrew the bottle cap"</div>
       </div>
       <div class="video-tile">
-        <video autoplay muted loop playsinline preload="metadata"
+        <video autoplay muted loop playsinline preload="auto"
                src="video/zip_pull.mp4"></video>
         <div class="video-caption">"pull the zipper"</div>
       </div>
       <div class="video-tile">
-        <video autoplay muted loop playsinline preload="metadata"
+        <video autoplay muted loop playsinline preload="auto"
                src="video/wipe_blackboard.mp4"></video>
         <div class="video-caption">"wipe the blackboard"</div>
       </div>
@@ -1818,6 +1818,29 @@
         });
       }, { threshold: 0.06 });
       els.forEach(el => io.observe(el));
+    })();
+
+    // ---- 3b. Force-play videos when they enter the viewport ----
+    // Browsers throttle simultaneous autoplay; calling .play() on
+    // viewport-enter sidesteps that and ensures every tile starts.
+    (function () {
+      const vids = document.querySelectorAll('.video-tile video');
+      if (!vids.length) return;
+      const tryPlay = (v) => {
+        const p = v.play();
+        if (p && typeof p.catch === 'function') p.catch(() => {});
+      };
+      if (!('IntersectionObserver' in window)) {
+        vids.forEach(tryPlay);
+        return;
+      }
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach(e => {
+          if (e.isIntersecting) tryPlay(e.target);
+          else e.target.pause();
+        });
+      }, { threshold: 0.1 });
+      vids.forEach(v => io.observe(v));
     })();
 
     // ---- 4. Copy citation ----
